@@ -1,5 +1,6 @@
 import React, { Component } from 'react';
 import './App.css';
+import SearchBar from "./SearchBar"
 
 /*global google*/
 
@@ -7,20 +8,21 @@ class App extends Component {
 
     initMap() {
         let map = new google.maps.Map(document.getElementById('map'), {
-            center: { lat: 40.7413549, lng: -73.9980244 },
+            center: { lat: 1.03974, lng: 103.901095 },
             zoom: 13
         });
 
         let locations = [
-            {title: 'Park Ave Penthouse', location: {lat: 40.7713024, lng: -73.9632393}},
-            {title: 'Chelsea Loft', location: {lat: 40.7444883, lng: -73.9949465}},
-            {title: 'Union Square Open Floor Plan', location: {lat: 40.7347062, lng: -73.9895759}},
-            {title: 'East Village Hip Studio', location: {lat: 40.7281777, lng: -73.984377}},
-            {title: 'TriBeCa Artsy Bachelor Pad', location: {lat: 40.7195264, lng: -74.0089934}},
-            {title: 'Chinatown Homey Space', location: {lat: 40.7180628, lng: -73.9961237}}
+            {title: 'Mr and Mrs Mohgan\'s Super Crispy Roti Prata', location: {lat: 1.312611, lng: 103.899259}},
+            {title: 'Dunman Food Centre', location: {lat: 1.309424, lng: 103.901848}},
+            {title: 'Sin Heng Claypot Bak Koot Teh', location: {lat: 1.307063, lng: 103.904363}},
+            {title: 'Sin Hoi Sai Eating House', location: {lat: 1.306967, lng: 103.906375}},
+            {title: 'Fei Fei Wanton Noodle', location: {lat: 1.313522, lng: 103.90227}},
         ];
 
         let infoWindow = new google.maps.InfoWindow();
+        let bounds = new google.maps.LatLngBounds();
+
         let markers = [];
 
         for (const [index, location] of locations.entries()) {
@@ -34,10 +36,12 @@ class App extends Component {
 
             markers.push(marker);
             marker.addListener('click', () => {
-                this.populateInfoWindow(marker, infoWindow, map);
+                populateInfoWindow(marker, infoWindow, map);
             });
+            bounds.extend(markers[index].position);
         }
 
+        map.fitBounds(bounds);
         // let tribeca = { lat: 40.719526, lng: -74.0089934 };
         //
         // let marker = new google.maps.Marker({
@@ -53,20 +57,7 @@ class App extends Component {
         // marker.addListener('click', function() {
         //     infoWindow.open(map, marker);
         // });
-
     };
-
-    populateInfoWindow(marker, infoWindow, map) {
-        if (infoWindow.marker !== marker) {
-            infoWindow.marker = marker;
-            infoWindow.setContent('<div>' + marker.title + '</div>');
-            infoWindow.open(map, marker);
-
-            infoWindow.addListener('closeclick',function(){
-                infoWindow.setMarker = null;
-            });
-        }
-    }
 
     addJavascriptSource = (src) => {
         let ref = window.document.getElementsByTagName("script")[0];
@@ -78,15 +69,54 @@ class App extends Component {
 
     componentDidMount() {
         window.initMap = this.initMap;
-        this.addJavascriptSource('https://maps.googleapis.com/maps/api/js?key=AIzaSyBDtSbC0xfGWk76oeJMx1om_miKJ9qGi48&v=3&callback=initMap');
+        this.addJavascriptSource('https://maps.googleapis.com/maps/api/js?libraries=geometry&key=AIzaSyBDtSbC0xfGWk76oeJMx1om_miKJ9qGi48&v=3&callback=initMap');
     }
 
     render() {
         return (
           <div className="App">
+              <SearchBar/>
               <div id="map"/>
           </div>
         );
+    }
+}
+
+function populateInfoWindow(marker, infoWindow, map) {
+    if (infoWindow.marker !== marker) {
+        infoWindow.setContent('');
+        infoWindow.marker = marker;
+        infoWindow.setContent('<div>' + marker.title + '</div>');
+
+        let streetViewService = new google.maps.StreetViewService();
+        let radius = 50;
+
+        function getStreetView(data, status) {
+            if (status === google.maps.StreetViewStatus.OK) {
+                let nearStreetViewLocation = data.location.latLng;
+                let heading = google.maps.geometry.spherical.computeHeading(
+                    nearStreetViewLocation, marker.position);
+                infoWindow.setContent('<div>' + marker.title + '</div><div id="pano"></div>');
+                let panoramaOptions = {
+                    position: nearStreetViewLocation,
+                    pov: {
+                        heading: heading,
+                        pitch: 30
+                    }
+                };
+                let panorama = new google.maps.StreetViewPanorama(document.getElementById('pano'), panoramaOptions);
+            } else {
+                infoWindow.setContent('<div>' + marker.title + '</div>' +
+                    '<div>No Street View Found</div>');
+            }
+        }
+
+        streetViewService.getPanoramaByLocation(marker.position, radius, getStreetView);
+        infoWindow.open(map, marker);
+
+        infoWindow.addListener('closeclick',function(){
+            infoWindow.setMarker = null;
+        });
     }
 }
 
