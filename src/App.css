@@ -28,6 +28,24 @@
     font-size: 14px;
 }
 
+.search-nearest-title-link {
+    background-color: #ffb74d;
+    border-radius: 4px;
+    /*text-decoration: underline;*/
+    padding: 4px 8px;
+    cursor: pointer;
+    color: #424242;
+    margin: 0 4px;
+}
+
+.search-nearest-title-link:hover {
+    color: #ffffff;
+    /*text-decoration: underline;*/
+}
+
+.display-inline {
+    display: inline-block;
+}
 
 #map {
   margin-top: 52px;

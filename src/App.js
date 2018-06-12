@@ -6,42 +6,48 @@ import SearchBar from "./SearchBar"
 
 class App extends Component {
 
-    initMap() {
-        let map = new google.maps.Map(document.getElementById('map'), {
-            center: { lat: 1.03974, lng: 103.901095 },
-            zoom: 13
-        });
-
-        let locations = [
+    state = {
+        map: null,
+        locations: [],
+        allLocations: [
             {title: 'Mr and Mrs Mohgan\'s Super Crispy Roti Prata', location: {lat: 1.312611, lng: 103.899259}},
             {title: 'Dunman Food Centre', location: {lat: 1.309424, lng: 103.901848}},
             {title: 'Sin Heng Claypot Bak Koot Teh', location: {lat: 1.307063, lng: 103.904363}},
             {title: 'Sin Hoi Sai Eating House', location: {lat: 1.306967, lng: 103.906375}},
             {title: 'Fei Fei Wanton Noodle', location: {lat: 1.313522, lng: 103.90227}},
-        ];
+        ],
+        markers: [],
+    };
+
+    initMap = () => {
+        this.state.map = new google.maps.Map(document.getElementById('map'), {
+            center: { lat: 1.03974, lng: 103.901095 },
+            zoom: 13
+        });
 
         let infoWindow = new google.maps.InfoWindow();
         let bounds = new google.maps.LatLngBounds();
 
-        let markers = [];
+        // let markers = [];
 
-        for (const [index, location] of locations.entries()) {
+        for (const [index, location] of this.state.locations.entries()) {
             let marker = new google.maps.Marker({
-                map: map,
+                map: this.state.map,
                 title: location.title,
                 position: location.location,
                 animationType: google.maps.Animation.DROP,
                 id: index,
             });
 
-            markers.push(marker);
+            this.state.markers.push(marker);
             marker.addListener('click', () => {
-                populateInfoWindow(marker, infoWindow, map);
+                populateInfoWindow(marker, infoWindow, this.state.map);
             });
-            bounds.extend(markers[index].position);
+            bounds.extend(this.state.markers[index].position);
         }
 
-        map.fitBounds(bounds);
+        this.state.map.fitBounds(bounds);
+
         // let tribeca = { lat: 40.719526, lng: -74.0089934 };
         //
         // let marker = new google.maps.Marker({
@@ -59,6 +65,29 @@ class App extends Component {
         // });
     };
 
+    filterLocationsBySearch = (e) => {
+        // console.log(e);
+        this.state.locations = e;
+        this.setNewMarkers();
+    };
+
+    setNewMarkers = () => {
+        for (const [index, marker] of this.state.markers.entries()) {
+            if (this.state.locations.map(location => location.title).includes(marker.title)) {
+                if (!marker.map) marker.setMap(this.state.map);
+            }
+            else {
+                if (marker.map) marker.setMap(null);
+            }
+        }
+
+        // for ()
+
+        // for (const [index, location] of this.state.locations.entries()) {
+        //
+        // }
+    };
+
     addJavascriptSource = (src) => {
         let ref = window.document.getElementsByTagName("script")[0];
         let script = window.document.createElement("script");
@@ -68,14 +97,15 @@ class App extends Component {
     };
 
     componentDidMount() {
+        this.state.locations = JSON.parse(JSON.stringify(this.state.allLocations));
         window.initMap = this.initMap;
         this.addJavascriptSource('https://maps.googleapis.com/maps/api/js?libraries=geometry&key=AIzaSyBDtSbC0xfGWk76oeJMx1om_miKJ9qGi48&v=3&callback=initMap');
-    }
+    };
 
     render() {
         return (
           <div className="App">
-              <SearchBar/>
+              <SearchBar locations={this.state.allLocations} showFilteredLocations={ this.filterLocationsBySearch }/>
               <div id="map"/>
           </div>
         );

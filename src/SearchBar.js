@@ -2,7 +2,8 @@ import React, { Component } from 'react'
 
 class SearchBar extends Component {
     state = {
-        places: [],
+        query: '',
+        searchResult: [],
     };
 
     // getAllBooks = () => {
@@ -11,21 +12,26 @@ class SearchBar extends Component {
     //     });
     //     console.log(BooksAPI.getAll());
     // };
-    //
-    // componentDidMount() {
-    //     this.getAllBooks();
-    // }
+
+    hasClickedOnPlace = (e) => {
+        console.log(e);
+    };
+
+    showFilteredLocations = (searchResult) => {
+        this.props.showFilteredLocations(searchResult);
+    };
+
+    componentDidMount() {
+    };
 
     filterPlacesByQuery = (query) => {
-        // if (query) {
-        //     BooksAPI.search(query.trim()).then(success => {
-        //         if (!success.error) {
-        //             this.setState({books: success});
-        //         }
-        //         else this.setState({books: []});
-        //     });
-        // }
-        // else this.setState({books: []});
+        this.setState({query: query});
+        if (query) {
+            let searchResult = this.props.locations.filter(location => location.title.toLowerCase().includes(query.toLowerCase()));
+            this.setState({searchResult: searchResult});
+            this.showFilteredLocations(searchResult);
+        }
+        else this.setState({searchResult: []});
     };
 
     render() {
@@ -35,7 +41,21 @@ class SearchBar extends Component {
                     <input type="text" placeholder="Search for places"
                            onChange={event => this.filterPlacesByQuery(event.target.value)}
                     />
-                    <div className="search-nearest-title">Places matching your search: </div>
+                    {this.state.query.length > 0 && this.state.searchResult.length > 0 &&
+                    <div className="search-nearest-title">Places matching your search: &nbsp;
+                        { this.state.searchResult.map((location, index) =>
+                            <div className="display-inline" key={index} onClick={this.hasClickedOnPlace.bind(this,location)}>
+                                <span className="search-nearest-title-link">{location.title}</span>
+                            </div>
+                        )}
+                    </div>
+                    }
+                    {this.state.query.length > 0 && this.state.searchResult.length === 0 &&
+                    <div className="search-nearest-title">There are no results found for '{this.state.query}'.</div>
+                    }
+                    {this.state.query.length === 0 &&
+                    <div className="search-nearest-title">Start typing in the bar above to search for places.</div>
+                    }
                 </div>
             </div>
         )
