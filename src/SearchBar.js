@@ -13,8 +13,9 @@ class SearchBar extends Component {
     //     console.log(BooksAPI.getAll());
     // };
 
-    hasClickedOnPlace = (e) => {
-        console.log(e);
+    hasClickedOnPlace = (location) => {
+        // console.log(location);
+        this.props.showClickedLocation(location);
     };
 
     showFilteredLocations = (searchResult) => {
@@ -31,7 +32,10 @@ class SearchBar extends Component {
             this.setState({searchResult: searchResult});
             this.showFilteredLocations(searchResult);
         }
-        else this.setState({searchResult: []});
+        else {
+            this.setState({searchResult: []});
+            this.showFilteredLocations(this.props.locations);
+        }
     };
 
     render() {

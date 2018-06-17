@@ -17,18 +17,46 @@ class App extends Component {
             {title: 'Fei Fei Wanton Noodle', location: {lat: 1.313522, lng: 103.90227}},
         ],
         markers: [],
+        infoWindow: null,
     };
+
+    getFourSquareLikes(location) {
+        const api = "https://api.foursquare.com/v2/venues/search?&client_id=ZC3DM45VDUQXJ2VZ4IN4VWDC51CPRQHOJHHTJA0LZ0CSZMVG&client_secret=ZYKQA5FE4BZNGIRMIUZMJYXGQ4VM4GU5W3SZYKLSG5JOYYYF&v=20180616";
+
+        const headers = {
+            'Accept': 'application/json',
+        };
+
+        return new Promise((resolve, reject) => {
+            fetch(`${api}&ll=${location.location.lat},${location.location.lng}&query=${location.title}`, {headers})
+                .then(res => res.json())
+                .catch(error => reject(error))
+                .then(data => {
+                    const api = `https://api.foursquare.com/v2/venues/${data.response.venues[0].id}/likes?client_id=ZC3DM45VDUQXJ2VZ4IN4VWDC51CPRQHOJHHTJA0LZ0CSZMVG&client_secret=ZYKQA5FE4BZNGIRMIUZMJYXGQ4VM4GU5W3SZYKLSG5JOYYYF&v=20180616`;
+                    const headers = {
+                        'Accept': 'application/json',
+                    };
+                    // console.log(data.response.venues)
+                    fetch(`${api}&ll=${location.location.lat},${location.location.lng}&query=${location.title}`, {headers})
+                        .then(res => res.json())
+                        .catch(error => reject(error))
+                        .then(data => {
+                            // console.log(data.response.likes.count);
+                            resolve(data.response.likes.count);
+                        }).catch(error => reject(error));
+
+                }).catch(error => reject(error));
+        });
+    }
 
     initMap = () => {
         this.state.map = new google.maps.Map(document.getElementById('map'), {
-            center: { lat: 1.03974, lng: 103.901095 },
+            center: {lat: 1.03974, lng: 103.901095},
             zoom: 13
         });
 
-        let infoWindow = new google.maps.InfoWindow();
+        this.state.infoWindow = new google.maps.InfoWindow();
         let bounds = new google.maps.LatLngBounds();
-
-        // let markers = [];
 
         for (const [index, location] of this.state.locations.entries()) {
             let marker = new google.maps.Marker({
@@ -41,34 +69,60 @@ class App extends Component {
 
             this.state.markers.push(marker);
             marker.addListener('click', () => {
-                populateInfoWindow(marker, infoWindow, this.state.map);
+                this.populateInfoWindow(marker, this.state.infoWindow, this.state.map);
             });
             bounds.extend(this.state.markers[index].position);
         }
-
         this.state.map.fitBounds(bounds);
-
-        // let tribeca = { lat: 40.719526, lng: -74.0089934 };
-        //
-        // let marker = new google.maps.Marker({
-        //     position: tribeca,
-        //     map: map,
-        //     title: 'first marker!'
-        // });
-        //
-        // let infoWindow = new google.maps.InfoWindow({
-        //     content: 'test',
-        // });
-        //
-        // marker.addListener('click', function() {
-        //     infoWindow.open(map, marker);
-        // });
     };
 
     filterLocationsBySearch = (e) => {
-        // console.log(e);
         this.state.locations = e;
         this.setNewMarkers();
+    };
+
+    expandInfoWindow = (location) => {
+        for (const [index, marker] of this.state.markers.entries()) {
+            if (marker.title === location.title) {
+                let infoWindow = this.state.infoWindow;
+
+                infoWindow.setContent('<div>' + marker.title + '</div>');
+
+                let streetViewService = new google.maps.StreetViewService();
+                let radius = 50;
+
+                function getStreetView(data, status) {
+                    if (status === google.maps.StreetViewStatus.OK) {
+                        let nearStreetViewLocation = data.location.latLng;
+                        let heading = google.maps.geometry.spherical.computeHeading(
+                            nearStreetViewLocation, marker.position);
+                        infoWindow.setContent('<div>' + marker.title + '</div><div id="pano"></div>');
+
+                        let panorama = new google.maps.StreetViewPanorama(
+                            document.getElementById('pano'), {
+                                position: nearStreetViewLocation,
+                                pov: {
+                                    heading: heading,
+                                    pitch: 30
+                                }
+                            });
+                        console.log(panorama);
+                    } else {
+                        infoWindow.setContent('<div>' + marker.title + '</div>' +
+                            '<div>No Street View Found</div>');
+                    }
+                }
+
+                streetViewService.getPanoramaByLocation(marker.position, radius, getStreetView);
+                infoWindow.open(this.map, marker);
+
+                infoWindow.addListener('closeclick', function () {
+                    infoWindow.setMarker = null;
+                });
+
+                break;
+            }
+        }
     };
 
     setNewMarkers = () => {
@@ -80,12 +134,6 @@ class App extends Component {
                 if (marker.map) marker.setMap(null);
             }
         }
-
-        // for ()
-
-        // for (const [index, location] of this.state.locations.entries()) {
-        //
-        // }
     };
 
     addJavascriptSource = (src) => {
@@ -97,6 +145,7 @@ class App extends Component {
     };
 
     componentDidMount() {
+        this.getFourSquareLikes(this.state.allLocations[0]);
         this.state.locations = JSON.parse(JSON.stringify(this.state.allLocations));
         window.initMap = this.initMap;
         this.addJavascriptSource('https://maps.googleapis.com/maps/api/js?libraries=geometry&key=AIzaSyBDtSbC0xfGWk76oeJMx1om_miKJ9qGi48&v=3&callback=initMap');
@@ -104,50 +153,50 @@ class App extends Component {
 
     render() {
         return (
-          <div className="App">
-              <SearchBar locations={this.state.allLocations} showFilteredLocations={ this.filterLocationsBySearch }/>
-              <div id="map"/>
-          </div>
+            <div className="App">
+                <SearchBar locations={this.state.allLocations} showFilteredLocations={this.filterLocationsBySearch}
+                           showClickedLocation={this.expandInfoWindow}/>
+                <div id="map"/>
+            </div>
         );
     }
-}
 
-function populateInfoWindow(marker, infoWindow, map) {
-    if (infoWindow.marker !== marker) {
-        infoWindow.setContent('');
-        infoWindow.marker = marker;
-        infoWindow.setContent('<div>' + marker.title + '</div>');
+    populateInfoWindow = (marker, infoWindow, map) => {
+            infoWindow.setContent('');
+            infoWindow.marker = marker;
+            infoWindow.setContent('<div>' + marker.title + '</div>');
 
-        let streetViewService = new google.maps.StreetViewService();
-        let radius = 50;
+            let streetViewService = new google.maps.StreetViewService();
+            let radius = 50;
 
-        function getStreetView(data, status) {
-            if (status === google.maps.StreetViewStatus.OK) {
-                let nearStreetViewLocation = data.location.latLng;
-                let heading = google.maps.geometry.spherical.computeHeading(
-                    nearStreetViewLocation, marker.position);
-                infoWindow.setContent('<div>' + marker.title + '</div><div id="pano"></div>');
-                let panoramaOptions = {
-                    position: nearStreetViewLocation,
-                    pov: {
-                        heading: heading,
-                        pitch: 30
-                    }
-                };
-                let panorama = new google.maps.StreetViewPanorama(document.getElementById('pano'), panoramaOptions);
-            } else {
-                infoWindow.setContent('<div>' + marker.title + '</div>' +
-                    '<div>No Street View Found</div>');
+            function getStreetView(data, status) {
+                if (status === google.maps.StreetViewStatus.OK) {
+                    let nearStreetViewLocation = data.location.latLng;
+                    let heading = google.maps.geometry.spherical.computeHeading(
+                        nearStreetViewLocation, marker.position);
+                    infoWindow.setContent('<div>' + marker.title + '</div><div id="pano"></div>');
+
+                    let panorama = new google.maps.StreetViewPanorama(document.getElementById('pano'), {
+                        position: nearStreetViewLocation,
+                        pov: {
+                            heading: heading,
+                            pitch: 30
+                        }
+                    });
+
+                } else {
+                    infoWindow.setContent('<div>' + marker.title + '</div>' +
+                        '<div>No Street View Found</div>');
+                }
             }
-        }
 
-        streetViewService.getPanoramaByLocation(marker.position, radius, getStreetView);
-        infoWindow.open(map, marker);
+            streetViewService.getPanoramaByLocation(marker.position, radius, getStreetView);
+            infoWindow.open(map, marker);
 
-        infoWindow.addListener('closeclick',function(){
-            infoWindow.setMarker = null;
-        });
+            infoWindow.addListener('closeclick', function () {
+                infoWindow.setMarker = null;
+            });
     }
 }
 
-export default App;
+export default App
