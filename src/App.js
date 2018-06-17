@@ -69,7 +69,7 @@ class App extends Component {
 
             this.state.markers.push(marker);
             marker.addListener('click', () => {
-                this.populateInfoWindow(marker, this.state.infoWindow, this.state.map);
+                this.populateInfoWindow(marker, this.state.infoWindow, this.state.map, location);
             });
             bounds.extend(this.state.markers[index].position);
         }
@@ -86,40 +86,20 @@ class App extends Component {
             if (marker.title === location.title) {
                 let infoWindow = this.state.infoWindow;
 
-                infoWindow.setContent('<div>' + marker.title + '</div>');
-
-                let streetViewService = new google.maps.StreetViewService();
-                let radius = 50;
-
-                function getStreetView(data, status) {
-                    if (status === google.maps.StreetViewStatus.OK) {
-                        let nearStreetViewLocation = data.location.latLng;
-                        let heading = google.maps.geometry.spherical.computeHeading(
-                            nearStreetViewLocation, marker.position);
-                        infoWindow.setContent('<div>' + marker.title + '</div><div id="pano"></div>');
-
-                        let panorama = new google.maps.StreetViewPanorama(
-                            document.getElementById('pano'), {
-                                position: nearStreetViewLocation,
-                                pov: {
-                                    heading: heading,
-                                    pitch: 30
-                                }
-                            });
-                        console.log(panorama);
-                    } else {
-                        infoWindow.setContent('<div>' + marker.title + '</div>' +
-                            '<div>No Street View Found</div>');
-                    }
-                }
-
-                streetViewService.getPanoramaByLocation(marker.position, radius, getStreetView);
+                infoWindow.setContent('<div style="font-weight: bold; color: #424242;">' + marker.title + '</div>');
                 infoWindow.open(this.map, marker);
 
+                this.getFourSquareLikes(location).then(numPeopleLiked => {
+                    infoWindow.setContent('<div style="font-weight: bold; color: #424242;">' + marker.title + '</div><div>' + numPeopleLiked +' people liked this place.</div>');
+                    infoWindow.open(this.map, marker);
+
+                    infoWindow.addListener('closeclick', function () {
+                        infoWindow.setMarker = null;
+                    });
+                });
                 infoWindow.addListener('closeclick', function () {
                     infoWindow.setMarker = null;
                 });
-
                 break;
             }
         }
@@ -161,41 +141,20 @@ class App extends Component {
         );
     }
 
-    populateInfoWindow = (marker, infoWindow, map) => {
-            infoWindow.setContent('');
-            infoWindow.marker = marker;
-            infoWindow.setContent('<div>' + marker.title + '</div>');
+    populateInfoWindow = (marker, infoWindow, map, location) => {
+        infoWindow.setContent('');
+        infoWindow.marker = marker;
 
-            let streetViewService = new google.maps.StreetViewService();
-            let radius = 50;
+        infoWindow.setContent('<div style="font-weight: bold; color: #424242;">' + marker.title + '</div>');
+        infoWindow.open(this.map, marker);
 
-            function getStreetView(data, status) {
-                if (status === google.maps.StreetViewStatus.OK) {
-                    let nearStreetViewLocation = data.location.latLng;
-                    let heading = google.maps.geometry.spherical.computeHeading(
-                        nearStreetViewLocation, marker.position);
-                    infoWindow.setContent('<div>' + marker.title + '</div><div id="pano"></div>');
+        this.getFourSquareLikes(location).then(numPeopleLiked => {
+            infoWindow.setContent('<div style="font-weight: bold; color: #424242;">' + marker.title + '</div><div>' + numPeopleLiked +' people liked this place.</div>');
+        });
 
-                    let panorama = new google.maps.StreetViewPanorama(document.getElementById('pano'), {
-                        position: nearStreetViewLocation,
-                        pov: {
-                            heading: heading,
-                            pitch: 30
-                        }
-                    });
-
-                } else {
-                    infoWindow.setContent('<div>' + marker.title + '</div>' +
-                        '<div>No Street View Found</div>');
-                }
-            }
-
-            streetViewService.getPanoramaByLocation(marker.position, radius, getStreetView);
-            infoWindow.open(map, marker);
-
-            infoWindow.addListener('closeclick', function () {
-                infoWindow.setMarker = null;
-            });
+        infoWindow.addListener('closeclick', function () {
+            infoWindow.setMarker = null;
+        });
     }
 }
 

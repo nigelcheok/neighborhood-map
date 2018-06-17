@@ -6,15 +6,7 @@ class SearchBar extends Component {
         searchResult: [],
     };
 
-    // getAllBooks = () => {
-    //     BooksAPI.getAll().then((books) => {
-    //         this.setState({ books: books })
-    //     });
-    //     console.log(BooksAPI.getAll());
-    // };
-
     hasClickedOnPlace = (location) => {
-        // console.log(location);
         this.props.showClickedLocation(location);
     };
 
