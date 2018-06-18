@@ -24,14 +24,16 @@ class App extends Component {
     // get the number of foursquare likes for place by first getting venue id through lat lng
     getFourSquareLikes(location) {
         const api = "https://api.foursquare.com/v2/venues/search?&client_id=ZC3DM45VDUQXJ2VZ4IN4VWDC51CPRQHOJHHTJA0LZ0CSZMVG&client_secret=ZYKQA5FE4BZNGIRMIUZMJYXGQ4VM4GU5W3SZYKLSG5JOYYYF&v=20180616";
-
         const headers = {
             'Accept': 'application/json',
         };
 
         return new Promise((resolve, reject) => {
             fetch(`${api}&ll=${location.location.lat},${location.location.lng}&query=${location.title}`, {headers})
-                .then(res => res.json())
+                .then(res => {
+                    if (res.ok) return res.json();
+                    reject();
+                })
                 .catch(error => reject(error))
                 .then(data => {
                     const api = `https://api.foursquare.com/v2/venues/${data.response.venues[0].id}/likes?client_id=ZC3DM45VDUQXJ2VZ4IN4VWDC51CPRQHOJHHTJA0LZ0CSZMVG&client_secret=ZYKQA5FE4BZNGIRMIUZMJYXGQ4VM4GU5W3SZYKLSG5JOYYYF&v=20180616`;
@@ -40,7 +42,10 @@ class App extends Component {
                     };
                     // console.log(data.response.venues)
                     fetch(`${api}&ll=${location.location.lat},${location.location.lng}&query=${location.title}`, {headers})
-                        .then(res => res.json())
+                        .then(res => {
+                            if (res.ok) return res.json();
+                            reject();
+                        })
                         .catch(error => reject(error))
                         .then(data => {
                             // console.log(data.response.likes.count);
