@@ -4,7 +4,6 @@ class SearchBar extends Component {
     state = {
         query: '',
         searchResult: [],
-        // initialLoad: true,
     };
 
     hasClickedOnPlace = (location) => {
@@ -16,20 +15,21 @@ class SearchBar extends Component {
     };
 
     componentDidMount() {
-        // this.state.searchResult = this.props.locations;
         this.setState({ searchResult: this.props.locations });
     };
 
     filterPlacesByQuery = (query) => {
         // this.initialLoad = false;
         this.setState({query: query});
+
         if (query) {
             let searchResult = this.props.locations.filter(location => location.title.toLowerCase().includes(query.toLowerCase()));
             this.setState({searchResult: searchResult});
             this.showFilteredLocations(searchResult);
         }
         else {
-            this.setState({searchResult: []});
+            // this.setState({searchResult: []});
+            this.setState({ searchResult: this.props.locations });
             this.showFilteredLocations(this.props.locations);
         }
     };
@@ -40,7 +40,7 @@ class SearchBar extends Component {
                 <div className="search-input-wrapper">
                     <input type="text" placeholder="Search for places" tabIndex="1"
                            onChange={event => this.filterPlacesByQuery(event.target.value)}
-                           role="searchbox"
+                           aria-label="Search"
                     />
                     { (this.state.searchResult.length > 0) &&
                     <div className="search-nearest-title">
@@ -49,7 +49,7 @@ class SearchBar extends Component {
                         &nbsp;
                         { this.state.searchResult.map((location, index) =>
                             <div className="display-inline search-nearest-title-link" key={index} onClick={this.hasClickedOnPlace.bind(this,location)}
-                                 tabIndex={index+1} onKeyPress={ event =>  { if (event.key === 'Enter') this.hasClickedOnPlace(location)} }>
+                                 tabIndex={index+1} onKeyPress={ event =>  { if (event.key === 'Enter') this.hasClickedOnPlace(location) } } role={ location.title }>
                                 <span>{location.title}</span>
                             </div>
                         )}

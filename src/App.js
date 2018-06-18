@@ -52,12 +52,13 @@ class App extends Component {
     }
 
     initMap = () => {
-        this.state.map = new google.maps.Map(document.getElementById('map'), {
-            center: {lat: 1.03974, lng: 103.901095},
-            zoom: 13
-        });
+        this.setState(
+            { map: new google.maps.Map(document.getElementById('map'), {
+                center: {lat: 1.03974, lng: 103.901095},
+                zoom: 13 }),
+             infoWindow: new google.maps.InfoWindow() }
+        );
 
-        this.state.infoWindow = new google.maps.InfoWindow();
         let bounds = new google.maps.LatLngBounds();
 
         for (const [index, location] of this.state.locations.entries()) {
@@ -129,14 +130,19 @@ class App extends Component {
     addJavascriptSource = (src) => {
         let ref = window.document.getElementsByTagName("script")[0];
         let script = window.document.createElement("script");
+        script.onerror = this.loadError;
         script.src = src;
         script.async = true;
         ref.parentNode.insertBefore(script, ref);
     };
 
+    loadError(oError) {
+        throw new URIError("The script " + oError.target.src + " didn't load correctly.");
+    }
+
     componentDidMount() {
         this.getFourSquareLikes(this.state.allLocations[0]);
-        this.state.locations = JSON.parse(JSON.stringify(this.state.allLocations));
+        this.setState({ locations: JSON.parse(JSON.stringify(this.state.allLocations)) });
         window.initMap = this.initMap;
         window.gm_authFailure = this.gm_authFailure;
         this.addJavascriptSource('https://maps.googleapis.com/maps/api/js?libraries=geometry&key=AIzaSyBDtSbC0xfGWk76oeJMx1om_miKJ9qGi48&v=3&callback=initMap');
