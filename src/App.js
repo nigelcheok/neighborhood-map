@@ -18,8 +18,10 @@ class App extends Component {
         ],
         markers: [],
         infoWindow: null,
+        hasError: false,
     };
 
+    // get the number of foursquare likes for place by first getting venue id through lat lng
     getFourSquareLikes(location) {
         const api = "https://api.foursquare.com/v2/venues/search?&client_id=ZC3DM45VDUQXJ2VZ4IN4VWDC51CPRQHOJHHTJA0LZ0CSZMVG&client_secret=ZYKQA5FE4BZNGIRMIUZMJYXGQ4VM4GU5W3SZYKLSG5JOYYYF&v=20180616";
 
@@ -69,6 +71,7 @@ class App extends Component {
 
             this.state.markers.push(marker);
             marker.addListener('click', () => {
+                marker.setAnimation(google.maps.Animation.BOUNCE);
                 this.populateInfoWindow(marker, this.state.infoWindow, this.state.map, location);
             });
             bounds.extend(this.state.markers[index].position);
@@ -76,30 +79,37 @@ class App extends Component {
         this.state.map.fitBounds(bounds);
     };
 
+    gm_authFailure = () => {
+        this.setState({ hasError: true });
+    };
+
     filterLocationsBySearch = (e) => {
         this.state.locations = e;
         this.setNewMarkers();
     };
 
+    // opens info window upon click in search bar
     expandInfoWindow = (location) => {
         for (const [index, marker] of this.state.markers.entries()) {
             if (marker.title === location.title) {
                 let infoWindow = this.state.infoWindow;
 
                 infoWindow.setContent('<div style="font-weight: bold; color: #424242;">' + marker.title + '</div>');
+
+                marker.setAnimation(google.maps.Animation.BOUNCE);
                 infoWindow.open(this.map, marker);
 
                 this.getFourSquareLikes(location).then(numPeopleLiked => {
                     infoWindow.setContent('<div style="font-weight: bold; color: #424242;">' + marker.title + '</div><div>' + numPeopleLiked +' people liked this place.</div>');
-                    infoWindow.open(this.map, marker);
-
-                    infoWindow.addListener('closeclick', function () {
-                        infoWindow.setMarker = null;
-                    });
+                }).catch(error => {
+                    infoWindow.setContent('<div style="font-weight: bold; color: #424242;">' + marker.title + '</div><div> FourSquare API not available at this time.');
                 });
+
                 infoWindow.addListener('closeclick', function () {
+                    marker.setAnimation(null);
                     infoWindow.setMarker = null;
                 });
+
                 break;
             }
         }
@@ -128,15 +138,24 @@ class App extends Component {
         this.getFourSquareLikes(this.state.allLocations[0]);
         this.state.locations = JSON.parse(JSON.stringify(this.state.allLocations));
         window.initMap = this.initMap;
+        window.gm_authFailure = this.gm_authFailure;
         this.addJavascriptSource('https://maps.googleapis.com/maps/api/js?libraries=geometry&key=AIzaSyBDtSbC0xfGWk76oeJMx1om_miKJ9qGi48&v=3&callback=initMap');
     };
 
     render() {
         return (
             <div className="App">
-                <SearchBar locations={this.state.allLocations} showFilteredLocations={this.filterLocationsBySearch}
-                           showClickedLocation={this.expandInfoWindow}/>
-                <div id="map"/>
+                <section>
+                    <SearchBar locations={this.state.allLocations} showFilteredLocations={this.filterLocationsBySearch}
+                               showClickedLocation={this.expandInfoWindow}/>
+                </section>
+                <main>
+                    <div id="map"/>
+                    { this.state.hasError &&
+                        <div id="error">Google Maps API: Invalid Key.<br/><br/>There is an issue authenticating your
+                            request.</div>
+                    }
+                </main>
             </div>
         );
     }
@@ -150,9 +169,12 @@ class App extends Component {
 
         this.getFourSquareLikes(location).then(numPeopleLiked => {
             infoWindow.setContent('<div style="font-weight: bold; color: #424242;">' + marker.title + '</div><div>' + numPeopleLiked +' people liked this place.</div>');
-        });
+        }).catch(error => {
+            infoWindow.setContent('<div style="font-weight: bold; color: #424242;">' + marker.title + '</div><div> FourSquare API not available at this time.');
+        });;
 
         infoWindow.addListener('closeclick', function () {
+            marker.setAnimation(null);
             infoWindow.setMarker = null;
         });
     }

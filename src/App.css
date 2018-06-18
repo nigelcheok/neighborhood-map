@@ -26,6 +26,7 @@
     background-color: #424242;
     color: #ffffff;
     font-size: 14px;
+    min-height: 32px;
 }
 
 .search-nearest-title-link {
@@ -36,11 +37,16 @@
     cursor: pointer;
     color: #424242;
     margin: 4px 4px;
+    /*margin: 0 4px;*/
 }
 
 .search-nearest-title-link:hover {
     color: #ffffff;
     /*text-decoration: underline;*/
+}
+
+.search-text {
+    transform: translateY(8px);
 }
 
 .display-inline {
@@ -50,4 +56,14 @@
 #map {
   margin-top: 52px;
   height: calc(100vh - 52px);
+}
+
+#error {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%,-50%);
+    margin-top: -86px;
+    color: #616161;
+    text-align: center;
 }

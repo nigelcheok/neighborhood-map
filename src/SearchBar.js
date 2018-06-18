@@ -36,10 +36,11 @@ class SearchBar extends Component {
 
     render() {
         return (
-            <div className="search-bar">
+            <div className="search-bar" role="search">
                 <div className="search-input-wrapper">
-                    <input type="text" placeholder="Search for places"
+                    <input type="text" placeholder="Search for places" tabIndex="1"
                            onChange={event => this.filterPlacesByQuery(event.target.value)}
+                           role="searchbox"
                     />
                     { (this.state.searchResult.length > 0) &&
                     <div className="search-nearest-title">
@@ -47,17 +48,18 @@ class SearchBar extends Component {
                         { this.state.query.length === 0 && <span>All Places:</span> }
                         &nbsp;
                         { this.state.searchResult.map((location, index) =>
-                            <div className="display-inline search-nearest-title-link" key={index} onClick={this.hasClickedOnPlace.bind(this,location)}>
+                            <div className="display-inline search-nearest-title-link" key={index} onClick={this.hasClickedOnPlace.bind(this,location)}
+                                 tabIndex={index+1} onKeyPress={ event =>  { if (event.key === 'Enter') this.hasClickedOnPlace(location)} }>
                                 <span>{location.title}</span>
                             </div>
                         )}
                     </div>
                     }
                     { this.state.searchResult.length === 0 && this.state.query.length > 0 &&
-                    <div className="search-nearest-title">There are no results found for '{this.state.query}'.</div>
+                    <div className="search-nearest-title"><div className="search-text">There are no results found for '{this.state.query}'.</div></div>
                     }
                     { this.state.searchResult.length === 0 && this.state.query.length === 0 &&
-                    <div className="search-nearest-title">Start typing in the bar above to search for places.</div>
+                    <div className="search-nearest-title"><div className="search-text">Start typing in the bar above to search for places.</div></div>
                     }
                 </div>
             </div>
